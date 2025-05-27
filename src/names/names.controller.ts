@@ -1,6 +1,8 @@
-    import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
-    import { get } from 'http';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
     import { NamesService } from './names.service';
+    import { CreateNameDto } from './dto/create-name.dto/create-name.dto';
+    import { UpdateNameDto } from './dto/update-name.dto/update-name.dto';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
 
     @Controller('names')
     export class NamesController {
@@ -8,24 +10,28 @@
             
         }
             @Get()
-        findAll(@Query() paginationQuery ) {
+        findAll(@Query() paginationQuery: PaginationQueryDto) {
             // const { limit, offset } = paginationQuery;
-            return this.namesService.findAll();   
+            return this.namesService.findAll(paginationQuery);   
         }
             @Get(":id")
-        findOne(@Param('id', ParseIntPipe) id: number) {
-            return this.namesService.findOne(id);
+        findOne(@Param('id') id: number) {
+            const name = this.namesService.findOne(id);
+            if(!name){
+                throw new NotFoundException (`Name #${id} not found`);
+            }
+            return name;
         }
             @Post()
-        create(@Body() body){
-        return this.namesService.create(body);
+        create(@Body() createNameDto: CreateNameDto){
+        return this.namesService.create(createNameDto);
     }
             @Patch(":id")
-        update(@Param('id', ParseIntPipe) id, @Body() body){
-        return this.namesService.update(id, body);
+        update(@Param('id') id, @Body() UpdateNameDto: UpdateNameDto){
+        return this.namesService.update(id, UpdateNameDto);
     }
             @Delete(":id")
-        remove(@Param('id', ParseIntPipe) id){
+        remove(@Param('id') id){
         return this.namesService.remove(id);
     }
 
