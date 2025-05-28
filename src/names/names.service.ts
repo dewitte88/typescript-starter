@@ -1,21 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { Name } from './entities/names.entity';
 import { CreateNameDto } from './dto/create-name.dto/create-name.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { UpdateNameDto } from './dto/update-name.dto/update-name.dto';
 import { Gender } from './entities/gender.entity/gender.entity';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
+import { Name_brands } from './names.constants';
+import {DataSource} from 'typeorm';
 
-@Injectable()
+@Injectable({scope: Scope.REQUEST}) 
 export class NamesService {
     constructor( 
         @InjectRepository(Name)
         private readonly nameRepository: Repository<Name>,
-          @InjectRepository(Gender)
+        @InjectRepository(Gender)
         private readonly genderRepository: Repository<Gender>,
-        private readonly connection: Connection,
-    ){}
+        private readonly connection: DataSource,
+        @Inject(Name_brands) nameBrands: string[] // Injecting a custom provider for name brands
+    ){
+        console.log('name service test');
+    }
 async findAll(paginationQuery: PaginationQueryDto): Promise<any[]> {
     const { limit, offset } = paginationQuery;
         return this.nameRepository.find({ relations: ['gender'], skip: offset, take: limit });
@@ -39,50 +44,38 @@ async preloadOrCreateGenderByName(name: string): Promise<Gender> {
     return gender;
 }
 
-async create(createNameDto: CreateNameDto): Promise<any> 
-{
-    const genderArray = Array.isArray(createNameDto.gender) ? createNameDto.gender : [createNameDto.gender];
-    // Get or create all genders from DB
-    const genders = (await Promise.all(genderArray.map(name => this.preloadOrCreateGenderByName(name))))
-        .sort((a, b) => a.id - b.id); // Sort genders by id ascending
+async create(createNameDto: CreateNameDto): Promise<Name> {
+    const genders = await this.getOrCreateGenders(createNameDto.gender);
     const name = this.nameRepository.create({
         ...createNameDto,
         gender: genders,
-        description: createNameDto.description // add description if present
+        description: createNameDto.description
     });
-    const saved = await this.nameRepository.save(name);
-    return {
-        id: saved.id,
-        name: saved.Name,
-        description: saved.description,
-        gender: saved.gender.map(g => ({ id: g.id, name: g.name }))
-    };
+    return this.nameRepository.save(name);
 }
 
-async update(id: number, updateNameDto: UpdateNameDto) {
-    let genders = undefined;
+async update(id: number, updateNameDto: UpdateNameDto): Promise<Name | string> {
+    let updatePayload: any = { id: +id, ...updateNameDto };
+
     if (updateNameDto.gender) {
-        const genderArray = Array.isArray(updateNameDto.gender) ? updateNameDto.gender : [updateNameDto.gender];
-        genders = await Promise.all(genderArray.map(name => this.preloadOrCreateGenderByName(name)));
+        const genders = await this.getOrCreateGenders(updateNameDto.gender);
+        updatePayload.gender = genders;
     }
-    const names = await this.nameRepository.preload({
-        id: +id,
-        ...updateNameDto,
-        gender: genders,
-        description: updateNameDto.description // add description if present
-    });
+
+    const names = await this.nameRepository.preload(updatePayload);
+
     if (!names) {
         return `Name #${id} not found`;
     }
-    const saved = await this.nameRepository.save({ ...names, ...updateNameDto, gender: genders, description: updateNameDto.description });
-    return {
-        id: saved.id,
-        name: saved.name,
-        description: saved.description,
-        gender: saved.gender.map(g => ({ id: g.id, name: g.name }))
-    };    
-
+    return this.nameRepository.save(names);
 }
+
+private async getOrCreateGenders(genderInput: string[] | string): Promise<Gender[]> {
+    const genderArray = Array.isArray(genderInput) ? genderInput : [genderInput];
+    const genders = await Promise.all(genderArray.map(name => this.preloadOrCreateGenderByName(name)));
+    return genders.sort((a, b) => a.id - b.id);
+}
+
 async recommend(name: Name) {
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();

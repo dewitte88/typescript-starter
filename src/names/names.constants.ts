@@ -1,0 +1,1 @@
+export const Name_brands = 'NAME_BRANDS';

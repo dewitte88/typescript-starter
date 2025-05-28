@@ -6,7 +6,7 @@ export class Name {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({nullable: true})
     Name: string;
 
     @Column({nullable: true})

@@ -1,12 +1,16 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, NotFoundException, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
     import { NamesService } from './names.service';
     import { CreateNameDto } from './dto/create-name.dto/create-name.dto';
     import { UpdateNameDto } from './dto/update-name.dto/update-name.dto';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
+import { REQUEST } from '@nestjs/core';
 
     @Controller('names')
     export class NamesController {
-        constructor(private readonly namesService: NamesService){
+        constructor(private readonly namesService: NamesService,
+            @Inject(REQUEST) private readonly request: Request, // Injecting the request object
+        ){
+            console.log('NamesController initialized');
             
         }
             @Get()
