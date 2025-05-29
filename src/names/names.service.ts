@@ -6,10 +6,11 @@ import { Repository } from 'typeorm';
 import { UpdateNameDto } from './dto/update-name.dto/update-name.dto';
 import { Gender } from './entities/gender.entity/gender.entity';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
-import { Name_brands } from './names.constants';
 import {DataSource} from 'typeorm';
+import { ConfigService, ConfigType } from '@nestjs/config';
+import namesConfig from './config/names.config';
 
-@Injectable({scope: Scope.REQUEST}) 
+@Injectable() 
 export class NamesService {
     constructor( 
         @InjectRepository(Name)
@@ -17,9 +18,10 @@ export class NamesService {
         @InjectRepository(Gender)
         private readonly genderRepository: Repository<Gender>,
         private readonly connection: DataSource,
-        @Inject(Name_brands) nameBrands: string[] // Injecting a custom provider for name brands
+        private readonly configService: ConfigService, 
+ // Injecting the names config
     ){
-        console.log('name service test');
+
     }
 async findAll(paginationQuery: PaginationQueryDto): Promise<any[]> {
     const { limit, offset } = paginationQuery;

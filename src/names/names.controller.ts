@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Inject, NotFoundException, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, SetMetadata, UsePipes } from '@nestjs/common';
     import { NamesService } from './names.service';
     import { CreateNameDto } from './dto/create-name.dto/create-name.dto';
     import { UpdateNameDto } from './dto/update-name.dto/update-name.dto';
-import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
-import { REQUEST } from '@nestjs/core';
+    import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
+    import { REQUEST } from '@nestjs/core';
+import { Public } from 'src/common/decorators/public.decorator';
 
     @Controller('names')
     export class NamesController {
@@ -13,6 +14,7 @@ import { REQUEST } from '@nestjs/core';
             console.log('NamesController initialized');
             
         }
+            @Public()
             @Get()
         findAll(@Query() paginationQuery: PaginationQueryDto) {
             // const { limit, offset } = paginationQuery;
