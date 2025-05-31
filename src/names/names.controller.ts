@@ -5,6 +5,7 @@ import { Body, Controller, Delete, Get, Inject, NotFoundException, Param, ParseI
     import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
     import { REQUEST } from '@nestjs/core';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Protocol } from 'src/common/decorators/protocol.decorator';
 
     @Controller('names')
     export class NamesController {
@@ -16,29 +17,32 @@ import { Public } from 'src/common/decorators/public.decorator';
         }
             @Public()
             @Get()
-        findAll(@Query() paginationQuery: PaginationQueryDto) {
-            // const { limit, offset } = paginationQuery;
+        async findAll(@Protocol("http") protocol: string, @Query() paginationQuery: PaginationQueryDto) {
+            console.log(`Finding all names with protocol: ${protocol}`);
+            
             return this.namesService.findAll(paginationQuery);   
         }
             @Get(":id")
-        findOne(@Param('id') id: number) {
-            const name = this.namesService.findOne(id);
-            if(!name){
-                throw new NotFoundException (`Name #${id} not found`);
+        async findOne(@Param('id', ParseIntPipe) id: number) {
+            console.log(`Finding name with ID: ${id}`);
+
+            const name = await this.namesService.findOne(id);
+            if (!name) {
+                throw new NotFoundException(`Name #${id} not found`);
             }
             return name;
-        }
+        } 
             @Post()
-        create(@Body() createNameDto: CreateNameDto){
-        return this.namesService.create(createNameDto);
+       async create(@Body() createNameDto: CreateNameDto){
+        return await this.namesService.create(createNameDto);
     }
             @Patch(":id")
-        update(@Param('id') id, @Body() UpdateNameDto: UpdateNameDto){
-        return this.namesService.update(id, UpdateNameDto);
+        async update(@Param('id') id, @Body() updateNameDto: UpdateNameDto){
+        return await this.namesService.update(id, updateNameDto);
     }
             @Delete(":id")
-        remove(@Param('id') id){
-        return this.namesService.remove(id);
+        async remove(@Param('id') id){
+        return await this.namesService.remove(id);
     }
 
     }
